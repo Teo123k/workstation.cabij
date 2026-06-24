@@ -69,6 +69,13 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    clients: Client;
+    'brand-briefs': BrandBrief;
+    'brand-strategies': BrandStrategy;
+    'brand-kits': BrandKit;
+    'brand-assets': BrandAsset;
+    'brand-exports': BrandExport;
+    'brand-social-strategies': BrandSocialStrategy;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,13 +85,20 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    clients: ClientsSelect<false> | ClientsSelect<true>;
+    'brand-briefs': BrandBriefsSelect<false> | BrandBriefsSelect<true>;
+    'brand-strategies': BrandStrategiesSelect<false> | BrandStrategiesSelect<true>;
+    'brand-kits': BrandKitsSelect<false> | BrandKitsSelect<true>;
+    'brand-assets': BrandAssetsSelect<false> | BrandAssetsSelect<true>;
+    'brand-exports': BrandExportsSelect<false> | BrandExportsSelect<true>;
+    'brand-social-strategies': BrandSocialStrategiesSelect<false> | BrandSocialStrategiesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -122,7 +136,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -147,7 +161,7 @@ export interface User {
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -163,10 +177,261 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clients".
+ */
+export interface Client {
+  id: number;
+  client_id: string;
+  client_name: string;
+  origin_lead_id?: string | null;
+  owner?: string | null;
+  status?: ('active' | 'inactive') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-briefs".
+ */
+export interface BrandBrief {
+  id: number;
+  brief_id: string;
+  client_id: string;
+  raw_brief: string;
+  extracted_brief_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  brand_audit_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  competitor_analysis_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('draft' | 'complete') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-strategies".
+ */
+export interface BrandStrategy {
+  id: number;
+  strategy_id: string;
+  client_id: string;
+  brief_id?: string | null;
+  positioning?: string | null;
+  audience_profile?: string | null;
+  brand_personality?: string | null;
+  tone_of_voice?: string | null;
+  visual_keywords?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  competitor_gap?: string | null;
+  social_media_direction?: string | null;
+  strategy_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  version?: number | null;
+  parent_strategy_id?: string | null;
+  revision_note?: string | null;
+  status?: ('active' | 'superseded') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-kits".
+ */
+export interface BrandKit {
+  id: number;
+  brand_kit_id: string;
+  client_id: string;
+  strategy_id?: string | null;
+  status?: ('draft' | 'approved' | 'superseded') | null;
+  direction_name: string;
+  colors_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  typography_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  logo_direction?: string | null;
+  photography_style?: string | null;
+  social_media_vibe?: string | null;
+  instagram_grid_style?: string | null;
+  ad_content_style?: string | null;
+  content_rules_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  full_brand_kit_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  version?: number | null;
+  parent_kit_id?: string | null;
+  revision_note?: string | null;
+  client_feedback?: string | null;
+  approved_at?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-assets".
+ */
+export interface BrandAsset {
+  id: number;
+  brand_asset_id: string;
+  client_id: string;
+  brand_kit_id?: string | null;
+  asset_type: string;
+  role?:
+    | (
+        | 'logo_ref'
+        | 'moodboard'
+        | 'color_board'
+        | 'image_ref'
+        | 'face_ref'
+        | 'background_ref'
+        | 'style_ref'
+        | 'competitor_ref'
+        | 'pdf_ref'
+      )
+    | null;
+  file_url?: string | null;
+  public_url?: string | null;
+  frameio_asset_id?: string | null;
+  metadata_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('active' | 'inactive') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-exports".
+ */
+export interface BrandExport {
+  id: number;
+  export_id: string;
+  client_id: string;
+  brand_kit_id: string;
+  export_type?:
+    | (
+        | 'brand_board'
+        | 'brand_guidelines_pdf'
+        | 'social_template_instagram_post'
+        | 'social_template_instagram_story'
+        | 'ad_template_meta'
+        | 'business_card_mockup'
+        | 'letterhead_mockup'
+        | 'email_signature_mockup'
+        | 'pitch_slide'
+      )
+    | null;
+  export_url?: string | null;
+  export_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-social-strategies".
+ */
+export interface BrandSocialStrategy {
+  id: number;
+  social_strategy_id: string;
+  client_id: string;
+  brand_kit_id?: string | null;
+  platform?: ('all' | 'instagram' | 'tiktok' | 'linkedin') | null;
+  strategy_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  version?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -183,20 +448,48 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'clients';
+        value: number | Client;
+      } | null)
+    | ({
+        relationTo: 'brand-briefs';
+        value: number | BrandBrief;
+      } | null)
+    | ({
+        relationTo: 'brand-strategies';
+        value: number | BrandStrategy;
+      } | null)
+    | ({
+        relationTo: 'brand-kits';
+        value: number | BrandKit;
+      } | null)
+    | ({
+        relationTo: 'brand-assets';
+        value: number | BrandAsset;
+      } | null)
+    | ({
+        relationTo: 'brand-exports';
+        value: number | BrandExport;
+      } | null)
+    | ({
+        relationTo: 'brand-social-strategies';
+        value: number | BrandSocialStrategy;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -206,10 +499,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -229,7 +522,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -274,6 +567,130 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clients_select".
+ */
+export interface ClientsSelect<T extends boolean = true> {
+  client_id?: T;
+  client_name?: T;
+  origin_lead_id?: T;
+  owner?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-briefs_select".
+ */
+export interface BrandBriefsSelect<T extends boolean = true> {
+  brief_id?: T;
+  client_id?: T;
+  raw_brief?: T;
+  extracted_brief_json?: T;
+  brand_audit_json?: T;
+  competitor_analysis_json?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-strategies_select".
+ */
+export interface BrandStrategiesSelect<T extends boolean = true> {
+  strategy_id?: T;
+  client_id?: T;
+  brief_id?: T;
+  positioning?: T;
+  audience_profile?: T;
+  brand_personality?: T;
+  tone_of_voice?: T;
+  visual_keywords?: T;
+  competitor_gap?: T;
+  social_media_direction?: T;
+  strategy_json?: T;
+  version?: T;
+  parent_strategy_id?: T;
+  revision_note?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-kits_select".
+ */
+export interface BrandKitsSelect<T extends boolean = true> {
+  brand_kit_id?: T;
+  client_id?: T;
+  strategy_id?: T;
+  status?: T;
+  direction_name?: T;
+  colors_json?: T;
+  typography_json?: T;
+  logo_direction?: T;
+  photography_style?: T;
+  social_media_vibe?: T;
+  instagram_grid_style?: T;
+  ad_content_style?: T;
+  content_rules_json?: T;
+  full_brand_kit_json?: T;
+  version?: T;
+  parent_kit_id?: T;
+  revision_note?: T;
+  client_feedback?: T;
+  approved_at?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-assets_select".
+ */
+export interface BrandAssetsSelect<T extends boolean = true> {
+  brand_asset_id?: T;
+  client_id?: T;
+  brand_kit_id?: T;
+  asset_type?: T;
+  role?: T;
+  file_url?: T;
+  public_url?: T;
+  frameio_asset_id?: T;
+  metadata_json?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-exports_select".
+ */
+export interface BrandExportsSelect<T extends boolean = true> {
+  export_id?: T;
+  client_id?: T;
+  brand_kit_id?: T;
+  export_type?: T;
+  export_url?: T;
+  export_json?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-social-strategies_select".
+ */
+export interface BrandSocialStrategiesSelect<T extends boolean = true> {
+  social_strategy_id?: T;
+  client_id?: T;
+  brand_kit_id?: T;
+  platform?: T;
+  strategy_json?: T;
+  version?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
