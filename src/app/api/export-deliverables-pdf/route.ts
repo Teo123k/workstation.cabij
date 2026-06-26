@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
+import chromium from '@sparticuz/chromium'
+import puppeteer from 'puppeteer-core'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,8 +23,10 @@ export async function POST(request: Request) {
   let browser
   try {
     browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: { width: 1280, height: 1600 },
+      executablePath: await chromium.executablePath(),
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
     
     const page = await browser.newPage()

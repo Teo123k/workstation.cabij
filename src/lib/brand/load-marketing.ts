@@ -29,10 +29,9 @@ export const loadMarketingDeliverables = async (brandKitId: string) => {
         k.client_id,
         COALESCE(c.client_name, c2.client_name) AS client_name,
         k.direction_name,
-        COALESCE(s.marketing_strategy_json, s2.marketing_strategy_json) AS marketing_strategy_json
+        s.marketing_strategy_json AS marketing_strategy_json
       FROM brand_kit k
       LEFT JOIN brand_strategy s ON s.strategy_id = k.strategy_id
-      LEFT JOIN brand_strategies s2 ON s2.strategy_id = k.strategy_id
       LEFT JOIN clients c ON c.client_id = k.client_id
       LEFT JOIN client c2 ON c2.client_id = k.client_id
       WHERE k.brand_kit_id = $1
