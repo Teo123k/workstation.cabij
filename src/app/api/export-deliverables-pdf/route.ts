@@ -4,9 +4,9 @@ import puppeteer from 'puppeteer-core'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}))
-  const brandKitId = String(body.brand_kit_id || '').trim()
+const generatePdf = async (request: Request, body: Record<string, unknown>) => {
+  const requestUrl = new URL(request.url)
+  const brandKitId = String(body.brand_kit_id || requestUrl.searchParams.get('brand_kit_id') || '').trim()
 
   if (!brandKitId) {
     return NextResponse.json({ error: 'brand_kit_id is required' }, { status: 400 })
@@ -62,4 +62,14 @@ export async function POST(request: Request) {
       await browser.close()
     }
   }
+}
+
+export async function GET(request: Request) {
+  return generatePdf(request, {})
+}
+
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => ({}))
+
+  return generatePdf(request, body)
 }

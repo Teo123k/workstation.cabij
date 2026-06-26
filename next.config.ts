@@ -9,6 +9,7 @@ const dirname = path.dirname(__filename)
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
   outputFileTracingIncludes: {
+    '/api/export-brand-board-file': ['./node_modules/@sparticuz/chromium/bin/**/*'],
     '/api/export-deliverables-pdf': ['./node_modules/@sparticuz/chromium/bin/**/*'],
   },
   images: {

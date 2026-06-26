@@ -26,8 +26,14 @@ export async function POST(request: Request) {
     .trim()
     .replace(/\s+/g, '')
 
+  const format = String(body.export_format || body.format || 'pdf').toLowerCase()
+  const exportPath =
+    format === 'png' || format === 'pdf'
+      ? `/api/export-brand-board-file?brand_kit_id=${encodeURIComponent(brandKitId)}&format=${encodeURIComponent(format)}`
+      : `/brand-board/${brandKitId}`
+
   return NextResponse.json({
-    export_url: `${origin.replace(/\/$/, '')}/brand-board/${brandKitId}`,
-    format: body.export_format || body.format || 'pdf',
+    export_url: `${origin.replace(/\/$/, '')}${exportPath}`,
+    format,
   })
 }
