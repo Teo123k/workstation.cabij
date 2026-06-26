@@ -19,30 +19,36 @@ const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [
 
 const toBoardKit = (kit: LoadedBrandBoard) => {
   const fullKit = asRecord(kit.full_brand_kit_json)
+  const typography = asRecord(kit.typography_json || fullKit.typography_json)
+  const rules = asRecord(kit.content_rules_json || fullKit.content_rules_json)
 
   return {
     direction_name: kit.direction_name,
-    colors_json: asArray(kit.colors_json || fullKit.colors_json) as {
-      name: string
-      hex: string
-      usage: string
-    }[],
-    typography_json: asRecord(kit.typography_json || fullKit.typography_json) as {
-      heading_font: string
-      heading_weight: string
-      body_font: string
-      body_weight: string
-      accent_font?: string | null
-      rationale: string
+    colors_json: asArray(kit.colors_json || fullKit.colors_json).map((color) => {
+      const row = asRecord(color)
+
+      return {
+        name: String(row.name || 'Brand color'),
+        hex: String(row.hex || '#111111'),
+        usage: String(row.usage || ''),
+      }
+    }),
+    typography_json: {
+      heading_font: String(typography.heading_font || 'Inter'),
+      heading_weight: String(typography.heading_weight || '700'),
+      body_font: String(typography.body_font || 'Inter'),
+      body_weight: String(typography.body_weight || '400'),
+      accent_font: typography.accent_font ? String(typography.accent_font) : null,
+      rationale: String(typography.rationale || ''),
     },
     logo_direction: kit.logo_direction || String(fullKit.logo_direction || ''),
     photography_style: kit.photography_style || String(fullKit.photography_style || ''),
     social_media_vibe: kit.social_media_vibe || String(fullKit.social_media_vibe || ''),
     instagram_grid_style: kit.instagram_grid_style || String(fullKit.instagram_grid_style || ''),
     ad_content_style: kit.ad_content_style || String(fullKit.ad_content_style || ''),
-    content_rules_json: asRecord(kit.content_rules_json || fullKit.content_rules_json) as {
-      do_rules: string[]
-      dont_rules: string[]
+    content_rules_json: {
+      do_rules: asArray(rules.do_rules).map(String),
+      dont_rules: asArray(rules.dont_rules).map(String),
     },
   }
 }
