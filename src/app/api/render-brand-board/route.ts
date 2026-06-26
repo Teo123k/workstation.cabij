@@ -18,8 +18,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'brand kit not found' }, { status: 404 })
   }
 
+  const origin =
+    process.env.PAYLOAD_PUBLIC_URL ||
+    request.headers.get('origin') ||
+    new URL(request.url).origin
+
   return NextResponse.json({
-    export_url: `/brand-board/${brandKitId}`,
+    export_url: `${origin.replace(/\/$/, '')}/brand-board/${brandKitId}`,
     format: body.export_format || body.format || 'pdf',
   })
 }
