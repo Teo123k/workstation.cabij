@@ -1,10 +1,8 @@
-import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { BrandBoard } from '@/lib/render/brand-board'
-import config from '@/payload.config'
-import type { BrandKit, Client } from '@/payload-types'
+import { loadBrandBoard, type LoadedBrandBoard } from '@/lib/brand/load-brand-board'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +17,7 @@ const asRecord = (value: unknown): Record<string, unknown> =>
 
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
 
-const toBoardKit = (kit: BrandKit) => {
+const toBoardKit = (kit: LoadedBrandBoard) => {
   const fullKit = asRecord(kit.full_brand_kit_json)
 
   return {
@@ -51,28 +49,13 @@ const toBoardKit = (kit: BrandKit) => {
 
 export default async function BrandBoardPage({ params }: PageProps) {
   const { brandKitId } = await params
-  const payload = await getPayload({ config: await config })
-
-  const result = await payload.find({
-    collection: 'brand-kits',
-    depth: 1,
-    limit: 1,
-    overrideAccess: true,
-    where: {
-      brand_kit_id: {
-        equals: brandKitId,
-      },
-    },
-  })
-
-  const kit = result.docs[0] as BrandKit | undefined
+  const kit = await loadBrandBoard(brandKitId)
 
   if (!kit) {
     notFound()
   }
 
-  const client = typeof kit.client_id === 'object' ? (kit.client_id as Client) : null
-  const clientName = client?.client_name || 'Brand Client'
+  const clientName = kit.client_name || 'Brand Client'
 
   return (
     <div style={{ background: '#f4f1eb', minHeight: '100vh', padding: '32px 16px' }}>

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
 
-import config from '@/payload.config'
+import { loadBrandBoard } from '@/lib/brand/load-brand-board'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,19 +12,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'brand_kit_id is required' }, { status: 400 })
   }
 
-  const payload = await getPayload({ config: await config })
-  const result = await payload.find({
-    collection: 'brand-kits',
-    limit: 1,
-    overrideAccess: true,
-    where: {
-      brand_kit_id: {
-        equals: brandKitId,
-      },
-    },
-  })
+  const brandBoard = await loadBrandBoard(brandKitId)
 
-  if (!result.docs.length) {
+  if (!brandBoard) {
     return NextResponse.json({ error: 'brand kit not found' }, { status: 404 })
   }
 
