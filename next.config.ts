@@ -8,6 +8,9 @@ const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  outputFileTracingIncludes: {
+    '/api/export-deliverables-pdf': ['./node_modules/@sparticuz/chromium/bin/**/*'],
+  },
   images: {
     localPatterns: [
       {
