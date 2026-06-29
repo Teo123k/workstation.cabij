@@ -2,6 +2,8 @@ import type { CollectionConfig } from 'payload';
 import fs from 'fs';
 import path from 'path';
 
+import { getMissingGoogleDriveEnv, uploadFileToGoogleDrive } from '@/lib/client-assets/google-drive'
+
 export const BrandAssets: CollectionConfig = {
   slug: 'brand-assets',
   admin: {
@@ -19,12 +21,17 @@ export const BrandAssets: CollectionConfig = {
         // If a file was just uploaded and it doesn't have a file_url yet (meaning it hasn't been pushed to Google Drive)
         if ((operation === 'create' || operation === 'update') && doc.filename && !doc.file_url) {
           try {
+            const missingEnv = getMissingGoogleDriveEnv()
+
+            if (missingEnv.length) {
+              req.payload.logger.error(`Missing Google Drive env vars: ${missingEnv.join(', ')}`)
+              return doc
+            }
+
             const filePath = path.join(process.cwd(), 'brand-assets', doc.filename);
             if (fs.existsSync(filePath)) {
               const fileBuffer = fs.readFileSync(filePath);
               const blob = new Blob([fileBuffer], { type: doc.mimeType });
-              const formData = new FormData();
-              formData.append('data', blob, doc.filename);
 
               // 1. Fetch Client to get provisioned Drive Folder IDs
               let targetFolderId = '';
@@ -56,28 +63,30 @@ export const BrandAssets: CollectionConfig = {
                 req.payload.logger.error(`Error fetching client for folder ID: ${e}`);
               }
 
-              const webhookUrl = 'https://n8n-vwzv.srv1756298.hstgr.cloud/webhook/payload-reference-upload' + 
-                `?client_id=${doc.client_id || ''}&role=${doc.role || 'image_ref'}&filename=${doc.filename}&folder_id=${targetFolderId}&reference_notes=${encodeURIComponent(doc.reference_notes || '')}`;
-                
-              const response = await fetch(webhookUrl, {
-                method: 'POST',
-                body: formData,
+              const driveResult = await uploadFileToGoogleDrive({
+                file: new File([blob], doc.filename, { type: doc.mimeType || 'application/octet-stream' }),
+                clientId: doc.client_id || '',
+                role: doc.role || 'image_ref',
+                folderId: targetFolderId || undefined,
               });
 
-              if (response.ok) {
-                const result = await response.json();
-                // Update the document with the returned URLs
-                await req.payload.update({
-                  collection: 'brand-assets',
-                  id: doc.id,
-                  data: {
-                    file_url: result.file_url,
-                    public_url: result.public_url,
+              await req.payload.update({
+                collection: 'brand-assets',
+                id: doc.id,
+                data: {
+                  file_url: driveResult.webViewLink || driveResult.webContentLink || '',
+                  public_url: driveResult.webViewLink || driveResult.webContentLink || '',
+                  metadata_json: {
+                    ...(doc.metadata_json || {}),
+                    storage: 'google_drive',
+                    google_drive_file_id: driveResult.id,
+                    google_drive_name: driveResult.name || doc.filename,
+                    google_drive_web_view_link: driveResult.webViewLink || '',
+                    google_drive_web_content_link: driveResult.webContentLink || '',
+                    uploaded_from: 'payload_admin_brand_assets',
                   },
-                });
-              } else {
-                req.payload.logger.error(`Failed to push to Google Drive via n8n: ${response.statusText}`);
-              }
+                },
+              });
             }
           } catch (error) {
             req.payload.logger.error(`Error in Google Drive upload hook: ${error}`);
