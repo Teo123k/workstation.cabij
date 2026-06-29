@@ -4,8 +4,11 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { evaluateBrandExportReadiness } from '@/lib/brand/export-readiness'
+import { getRoleLabel, ROLE_OPTIONS } from '@/lib/client-assets/roles'
 import { getClientWorkspace } from '@/lib/client-workspace/db'
 import config from '@/payload.config'
+
+import { ClientReferenceUploadForm } from '../../client-references/[clientId]/ClientReferenceUploadForm'
 
 import '../../styles.css'
 
@@ -38,6 +41,28 @@ const formatDate = (value: unknown) => {
 }
 
 const first = <T,>(items: T[]) => items[0]
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+const entries = (value: unknown) => Object.entries(asRecord(value)).filter(([, item]) => item !== null && item !== undefined && item !== '')
+const titleCase = (value: string) =>
+  value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+const toDisplayValue = (value: unknown) => {
+  if (value === null || value === undefined || value === '') return null
+  if (Array.isArray(value)) {
+    const items = value.map((item) => shortText(item, 160)).filter((item) => item !== 'Not recorded')
+    return items.length ? items : null
+  }
+
+  if (typeof value === 'object') {
+    const objectEntries = entries(value).map(([key, item]) => `${titleCase(key)}: ${shortText(item, 180)}`)
+    return objectEntries.length ? objectEntries : null
+  }
+
+  return text(value)
+}
 
 const deriveWorkspaceState = ({
   hasBrief,
@@ -150,9 +175,36 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
           requireMarketingStrategy: false,
         })
       : null
-  const strategyBrainCount = workspace.agencyBrainStats
-    .filter((row) => row.task_key === 'brand_strategy' || row.task_key === 'global')
-    .reduce((total, row) => total + Number(row.count || 0), 0)
+  const briefFields = entries(latestBrief ? asRecord(latestBrief.extracted_brief_json) : {})
+  const groupedBriefFields = [
+    {
+      title: 'Business',
+      items: briefFields.filter(([key]) =>
+        ['client_name', 'business_name', 'industry', 'location', 'website_url', 'instagram_url', 'email'].includes(key),
+      ),
+    },
+    {
+      title: 'Audience and goals',
+      items: briefFields.filter(([key]) =>
+        ['target_audience', 'offer', 'brand_goals', 'desired_feeling', 'budget', 'timeline', 'source'].includes(key),
+      ),
+    },
+    {
+      title: 'Direction and references',
+      items: briefFields.filter(([key]) =>
+        ['competitors', 'visual_references', 'things_to_avoid', 'origin_lead_id'].includes(key),
+      ),
+    },
+  ].filter((section) => section.items.length > 0)
+  const uncategorizedBriefFields = briefFields.filter(
+    ([key]) => !groupedBriefFields.some((section) => section.items.some(([sectionKey]) => sectionKey === key)),
+  )
+  const assetsByRole = new Map<string, number>()
+
+  for (const asset of workspace.assets) {
+    const role = text(asset.role, 'image_ref')
+    assetsByRole.set(role, (assetsByRole.get(role) || 0) + 1)
+  }
 
   return (
     <main className="workstation-page">
@@ -160,24 +212,13 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
         <header className="workstation-topbar">
           <div>
             <Link className="workspace-back" href="/clients">
-              Clients
+              Back to client list
             </Link>
             <p className="eyebrow">Client workspace</p>
             <h1>{workspace.client.client_name}</h1>
             <p className="workspace-subtitle">
               {workspace.client.client_id} · {workspace.client.status}
             </p>
-          </div>
-          <div className="workstation-actions">
-            <Link className="reference-button" href={`/intake/${workspace.client.client_id}`}>
-              Intake
-            </Link>
-            <Link className="reference-button secondary" href={`/client-references/${workspace.client.client_id}`}>
-              References
-            </Link>
-            <Link className="reference-button secondary" href="/admin/collections/clients">
-              Admin
-            </Link>
           </div>
         </header>
 
@@ -188,7 +229,6 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
           <a href="#directions">Directions</a>
           <a href="#deliverables">Deliverables</a>
           <a href="#qa">QA</a>
-          <a href="#brain">Agency Brain</a>
         </nav>
 
         <section className="workspace-overview">
@@ -234,31 +274,7 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
           </div>
         </section>
 
-        <section className="workspace-grid">
-          <article className="workspace-panel">
-            <span className="panel-label">Briefs</span>
-            <strong>{workspace.briefs.length}</strong>
-            <p>{latestBrief ? shortText(latestBrief.raw_brief, 120) : 'No brief saved yet.'}</p>
-          </article>
-          <article className="workspace-panel">
-            <span className="panel-label">Strategy</span>
-            <strong>{workspace.strategies.length}</strong>
-            <p>{latestStrategy ? shortText(latestStrategy.positioning, 120) : 'No strategy generated yet.'}</p>
-          </article>
-          <article className="workspace-panel">
-            <span className="panel-label">Brand directions</span>
-            <strong>{workspace.kits.length}</strong>
-            <p>{latestKit ? text(latestKit.direction_name) : 'No direction generated yet.'}</p>
-          </article>
-          <article className="workspace-panel">
-            <span className="panel-label">Exports</span>
-            <strong>{workspace.exports.length}</strong>
-            <p>{workspace.exports.length ? 'Client-facing files are available below.' : 'No exports yet.'}</p>
-          </article>
-        </section>
-
-        <div className="workspace-layout">
-          <section className="workspace-main">
+        <section className="workspace-main workspace-main-full">
             <article className="workspace-section" id="brief">
               <div className="section-heading">
                 <div>
@@ -266,16 +282,80 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
                   <h2>Brief</h2>
                 </div>
               </div>
-              {workspace.briefs.length ? (
-                workspace.briefs.map((brief) => (
-                  <div className="workspace-record" key={text(brief.brief_id)}>
+              {latestBrief ? (
+                <div className="workspace-document">
+                  <div className="workspace-document-header">
                     <div>
-                      <strong>{text(brief.brief_id)}</strong>
-                      <span>{formatDate(brief.updated_at || brief.created_at)}</span>
+                      <p className="eyebrow">Client-ready brief</p>
+                      <strong>{workspace.client.client_name}</strong>
                     </div>
-                    <p>{shortText(brief.raw_brief, 420)}</p>
+                    <span>{formatDate(latestBrief.updated_at || latestBrief.created_at)}</span>
                   </div>
-                ))
+                  {groupedBriefFields.length > 0 && (
+                    <div className="document-grid">
+                      {groupedBriefFields.map((section) => (
+                        <section className="document-card" key={section.title}>
+                          <h3>{section.title}</h3>
+                          <dl className="document-facts">
+                            {section.items.map(([key, value]) => {
+                              const displayValue = toDisplayValue(value)
+                              if (!displayValue) return null
+
+                              return (
+                                <div key={key}>
+                                  <dt>{titleCase(key)}</dt>
+                                  <dd>
+                                    {Array.isArray(displayValue) ? (
+                                      <ul className="document-list">
+                                        {displayValue.map((item) => (
+                                          <li key={item}>{item}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      displayValue
+                                    )}
+                                  </dd>
+                                </div>
+                              )
+                            })}
+                          </dl>
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                  {uncategorizedBriefFields.length > 0 && (
+                    <section className="document-card">
+                      <h3>Additional notes</h3>
+                      <dl className="document-facts">
+                        {uncategorizedBriefFields.map(([key, value]) => {
+                          const displayValue = toDisplayValue(value)
+                          if (!displayValue) return null
+
+                          return (
+                            <div key={key}>
+                              <dt>{titleCase(key)}</dt>
+                              <dd>
+                                {Array.isArray(displayValue) ? (
+                                  <ul className="document-list">
+                                    {displayValue.map((item) => (
+                                      <li key={item}>{item}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  displayValue
+                                )}
+                              </dd>
+                            </div>
+                          )
+                        })}
+                      </dl>
+                    </section>
+                  )}
+                  <section className="document-card document-card-full">
+                    <h3>Original brief</h3>
+                    <p className="document-copy">{text(latestBrief.raw_brief)}</p>
+                  </section>
+                </div>
               ) : (
                 <p className="workspace-muted">No brief has been saved for this client yet.</p>
               )}
@@ -287,31 +367,77 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
                   <p className="eyebrow">Evidence</p>
                   <h2>References</h2>
                 </div>
-                <Link className="reference-button secondary" href={`/client-references/${workspace.client.client_id}`}>
-                  Upload
-                </Link>
               </div>
-              <div className="workspace-list">
-                {workspace.assets.map((asset) => (
-                  <div className="workspace-record compact" key={text(asset.brand_asset_id)}>
-                    <div>
-                      <strong>{text(asset.role)}</strong>
-                      <span>{text(asset.brand_asset_id)} · {text(asset.asset_type)}</span>
-                    </div>
-                    {Boolean(asset.public_url || asset.file_url) && (
-                      <a href={String(asset.public_url || asset.file_url)} rel="noreferrer" target="_blank">
-                        Open
-                      </a>
-                    )}
+              <div className="reference-grid workspace-embedded-grid">
+                <section className="reference-panel">
+                  <h2>Upload references</h2>
+                  <p>Upload real brand evidence, inspiration, old materials, and product photos directly from this workspace.</p>
+                  <ClientReferenceUploadForm clientId={workspace.client.client_id} />
+                </section>
+
+                <section className="reference-panel">
+                  <h2>Evidence checklist</h2>
+                  <div className="checklist">
+                    {ROLE_OPTIONS.map((role) => {
+                      const count = assetsByRole.get(role.value) || 0
+
+                      return (
+                        <div className="checklist-row" key={role.value}>
+                          <div>
+                            <strong>{role.label}</strong>
+                            <span>{role.description}</span>
+                          </div>
+                          <mark className={count ? 'done' : role.required ? 'missing' : ''}>
+                            {count ? `${count} saved` : role.required ? 'required' : 'useful'}
+                          </mark>
+                        </div>
+                      )
+                    })}
                   </div>
-                ))}
-                {!workspace.assets.length && <p className="workspace-muted">No reference assets saved yet.</p>}
+                </section>
               </div>
+              <section className="reference-panel workspace-inline-panel">
+                <h2>Saved references</h2>
+                {workspace.assets.length ? (
+                  <div className="asset-table">
+                    {workspace.assets.map((asset) => (
+                      <article className="asset-row" key={text(asset.brand_asset_id)}>
+                        <div>
+                          <strong>{getRoleLabel(text(asset.role, 'image_ref'))}</strong>
+                          <span>
+                            {text(asset.brand_asset_id)} · {text(asset.asset_type)}
+                          </span>
+                          <span>{formatDate(asset.created_at)}</span>
+                        </div>
+                        {Boolean(asset.public_url || asset.file_url) && (
+                          <a href={String(asset.public_url || asset.file_url)} rel="noreferrer" target="_blank">
+                            Open
+                          </a>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="workspace-muted">No reference assets saved yet.</p>
+                )}
+              </section>
               {workspace.pendingRequests.length > 0 && (
-                <div className="workspace-note">
-                  {workspace.pendingRequests.length} pending upload request
-                  {workspace.pendingRequests.length === 1 ? '' : 's'} for this client.
-                </div>
+                <section className="reference-panel workspace-inline-panel">
+                  <h2>Pending upload requests</h2>
+                  <div className="checklist">
+                    {workspace.pendingRequests.map((request) => (
+                      <div className="checklist-row" key={text(request.request_id)}>
+                        <div>
+                          <strong>{getRoleLabel(text(request.role, 'image_ref'))}</strong>
+                          <span>{text(request.description, 'Reference requested by the agent.')}</span>
+                        </div>
+                        <mark className={text(request.priority) === 'required' ? 'missing' : ''}>
+                          {text(request.priority)}
+                        </mark>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               )}
             </article>
 
@@ -322,26 +448,71 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
                   <h2>Strategy</h2>
                 </div>
               </div>
-              {workspace.strategies.length ? (
-                workspace.strategies.map((strategy) => (
-                  <div className="workspace-record" key={text(strategy.strategy_id)}>
+              {latestStrategy ? (
+                <div className="workspace-document">
+                  <div className="workspace-document-header">
                     <div>
-                      <strong>{text(strategy.strategy_id)}</strong>
-                      <span>{text(strategy.status)} · v{text(strategy.version)}</span>
+                      <p className="eyebrow">Client-ready strategy</p>
+                      <strong>{workspace.client.client_name}</strong>
                     </div>
-                    <p>{shortText(strategy.positioning, 420)}</p>
-                    <dl className="workspace-facts">
-                      <div>
-                        <dt>USP</dt>
-                        <dd>{shortText(strategy.unique_selling_prop, 120)}</dd>
-                      </div>
-                      <div>
-                        <dt>Voice</dt>
-                        <dd>{shortText(strategy.tone_of_voice, 120)}</dd>
-                      </div>
-                    </dl>
+                    <span>
+                      {text(latestStrategy.status)} · v{text(latestStrategy.version)} ·{' '}
+                      {formatDate(latestStrategy.updated_at || latestStrategy.created_at)}
+                    </span>
                   </div>
-                ))
+                  <section className="document-card document-card-full">
+                    <h3>Positioning</h3>
+                    <p className="document-copy">{text(latestStrategy.positioning)}</p>
+                  </section>
+                  <div className="document-grid">
+                    <section className="document-card">
+                      <h3>Brand foundation</h3>
+                      <dl className="document-facts">
+                        <div>
+                          <dt>Company summary</dt>
+                          <dd>{text(latestStrategy.company_summary)}</dd>
+                        </div>
+                        <div>
+                          <dt>Mission</dt>
+                          <dd>{text(latestStrategy.mission)}</dd>
+                        </div>
+                        <div>
+                          <dt>Vision</dt>
+                          <dd>{text(latestStrategy.vision)}</dd>
+                        </div>
+                        <div>
+                          <dt>USP</dt>
+                          <dd>{text(latestStrategy.unique_selling_prop)}</dd>
+                        </div>
+                      </dl>
+                    </section>
+                    <section className="document-card">
+                      <h3>Audience and voice</h3>
+                      <dl className="document-facts">
+                        <div>
+                          <dt>Audience profile</dt>
+                          <dd>{text(latestStrategy.audience_profile)}</dd>
+                        </div>
+                        <div>
+                          <dt>Brand personality</dt>
+                          <dd>{text(latestStrategy.brand_personality)}</dd>
+                        </div>
+                        <div>
+                          <dt>Tone of voice</dt>
+                          <dd>{text(latestStrategy.tone_of_voice)}</dd>
+                        </div>
+                        <div>
+                          <dt>Social direction</dt>
+                          <dd>{text(latestStrategy.social_media_direction)}</dd>
+                        </div>
+                      </dl>
+                    </section>
+                  </div>
+                  <section className="document-card document-card-full">
+                    <h3>Competitive gap</h3>
+                    <p className="document-copy">{text(latestStrategy.competitor_gap)}</p>
+                  </section>
+                </div>
               ) : (
                 <p className="workspace-muted">No strategy has been generated yet.</p>
               )}
@@ -362,6 +533,16 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
                       <mark className={kit.status === 'approved' ? 'status-good' : ''}>{text(kit.status)}</mark>
                     </header>
                     <p>{shortText(kit.photography_style || kit.social_media_vibe || kit.logo_direction, 160)}</p>
+                    <dl className="workspace-facts">
+                      <div>
+                        <dt>Photography</dt>
+                        <dd>{shortText(kit.photography_style, 100)}</dd>
+                      </div>
+                      <div>
+                        <dt>Logo</dt>
+                        <dd>{shortText(kit.logo_direction, 100)}</dd>
+                      </div>
+                    </dl>
                     <div className="kit-actions">
                       <Link href={`/brand-board/${kit.brand_kit_id}`}>Brand board</Link>
                       <Link href={`/deliverables/${kit.brand_kit_id}`}>Deliverables</Link>
@@ -403,9 +584,7 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
                 {!workspace.exports.length && <p className="workspace-muted">No exports generated yet.</p>}
               </div>
             </article>
-          </section>
 
-          <aside className="workspace-side">
             <section className="workspace-section" id="qa">
               <p className="eyebrow">Quality</p>
               <h2>Approvals and QA</h2>
@@ -427,44 +606,7 @@ export default async function ClientWorkspacePage({ params }: PageProps) {
                 )}
               </div>
             </section>
-
-            <section className="workspace-section" id="brain">
-              <p className="eyebrow">Agency Brain</p>
-              <h2>Strategy knowledge coverage</h2>
-              <p className="workspace-muted">
-                {strategyBrainCount} active global or strategy records are currently wired into strategy prompting.
-              </p>
-              <p className="workspace-muted">
-                Brief intake, kit generation, deliverables, and QA still need explicit runtime wiring before this can
-                be treated as full-workflow agency intelligence.
-              </p>
-              <div className="workspace-list">
-                {workspace.agencyBrainStats.slice(0, 8).map((row) => (
-                  <div className="workspace-mini" key={`${row.task_key}-${row.knowledge_type}-${row.token_weight}`}>
-                    <strong>{text(row.task_key)}</strong>
-                    <span>
-                      {text(row.count)} {text(row.knowledge_type)} · {text(row.token_weight)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="workspace-section">
-              <p className="eyebrow">Automation</p>
-              <h2>Recent agent runs</h2>
-              <div className="workspace-list">
-                {workspace.agentRuns.map((run) => (
-                  <div className="workspace-mini" key={text(run.agent_run_id)}>
-                    <strong>{text(run.action_name)}</strong>
-                    <span>{text(run.status)} · {formatDate(run.created_at)}</span>
-                  </div>
-                ))}
-                {!workspace.agentRuns.length && <p className="workspace-muted">No agent runs logged yet.</p>}
-              </div>
-            </section>
-          </aside>
-        </div>
+        </section>
       </section>
     </main>
   )

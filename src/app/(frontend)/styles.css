@@ -734,6 +734,10 @@ svg {
   gap: 16px;
 }
 
+.workspace-main-full {
+  margin-top: 16px;
+}
+
 .workspace-section {
   scroll-margin-top: 76px;
   padding: 20px;
@@ -966,6 +970,109 @@ svg {
   padding: 10px 12px;
 }
 
+.workspace-document {
+  display: grid;
+  gap: 16px;
+}
+
+.workspace-document-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #ecefe9;
+  padding-bottom: 14px;
+}
+
+.workspace-document-header strong {
+  display: block;
+  color: #1f2a25;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.workspace-document-header span {
+  color: #6d736c;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.document-card {
+  border: 1px solid #e6e9e2;
+  border-radius: 8px;
+  background: #fcfcfa;
+  padding: 18px;
+}
+
+.document-card-full {
+  grid-column: 1 / -1;
+}
+
+.document-card h3 {
+  margin: 0 0 14px;
+  color: #1f2a25;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.document-facts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.document-facts div {
+  display: grid;
+  gap: 6px;
+}
+
+.document-facts dt {
+  color: #6b716a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.document-facts dd {
+  margin: 0;
+  color: #313932;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.document-copy {
+  color: #313932;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.document-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.document-list li {
+  margin: 0 0 6px;
+}
+
+.workspace-embedded-grid {
+  margin-bottom: 16px;
+}
+
+.workspace-inline-panel {
+  margin-bottom: 0;
+}
+
 .workspace-overview {
   display: grid;
   gap: 16px;
@@ -1075,6 +1182,10 @@ svg {
   .workspace-side {
     order: -1;
   }
+
+  .document-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1084,7 +1195,8 @@ svg {
 
   .workstation-topbar,
   .section-heading,
-  .workspace-record.compact {
+  .workspace-record.compact,
+  .workspace-document-header {
     grid-template-columns: 1fr;
     flex-direction: column;
     align-items: flex-start;
