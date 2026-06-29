@@ -65,8 +65,8 @@ export default async function ClientReferencesPage({
           <section className="reference-panel">
             <h2>Upload to Google Drive</h2>
             <p>
-              Use this when Telegram upload is inconvenient. Payload sends files to n8n, then n8n
-              saves them to Google Drive and registers them for the agent.
+              Use this when Telegram upload is inconvenient. Payload uploads directly to Google
+              Drive and registers the file for the agent.
             </p>
             <ClientReferenceUploadForm clientId={clientId} />
           </section>

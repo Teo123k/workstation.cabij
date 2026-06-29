@@ -50,9 +50,10 @@ export async function uploadFileToGoogleDrive(params: {
   file: File
   clientId: string
   role: string
+  folderId?: string
 }): Promise<DriveUploadResult> {
   const accessToken = await getGoogleDriveAccessToken()
-  const folderId = process.env.GOOGLE_DRIVE_OUTPUT_FOLDER_ID || ''
+  const folderId = params.folderId || process.env.GOOGLE_DRIVE_OUTPUT_FOLDER_ID || ''
   const safeName = params.file.name || `${params.role}-${Date.now()}`
   const boundary = `branding-os-${Date.now()}`
   const metadata = {
