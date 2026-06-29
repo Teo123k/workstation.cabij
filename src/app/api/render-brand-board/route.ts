@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { evaluateBrandExportReadiness } from '@/lib/brand/export-readiness'
 import { loadBrandBoard } from '@/lib/brand/load-brand-board'
 
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,18 @@ export async function POST(request: Request) {
 
   if (!brandBoard) {
     return NextResponse.json({ error: 'brand kit not found' }, { status: 404 })
+  }
+
+  const readiness = await evaluateBrandExportReadiness(brandKitId)
+
+  if (!readiness?.ready) {
+    return NextResponse.json(
+      {
+        error: 'brand board export is blocked until readiness checks pass',
+        issues: readiness?.issues || ['Export readiness could not be verified'],
+      },
+      { status: 409 },
+    )
   }
 
   const origin = (

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import React from 'react'
 
+import { evaluateBrandExportReadiness } from '@/lib/brand/export-readiness'
 import { BrandBoard } from '@/lib/render/brand-board'
 import { loadBrandBoard, type LoadedBrandBoard } from '@/lib/brand/load-brand-board'
 
@@ -55,7 +56,10 @@ const toBoardKit = (kit: LoadedBrandBoard) => {
 
 export default async function BrandBoardPage({ params }: PageProps) {
   const { brandKitId } = await params
-  const kit = await loadBrandBoard(brandKitId)
+  const [kit, readiness] = await Promise.all([
+    loadBrandBoard(brandKitId),
+    evaluateBrandExportReadiness(brandKitId),
+  ])
 
   if (!kit) {
     notFound()
@@ -65,6 +69,29 @@ export default async function BrandBoardPage({ params }: PageProps) {
 
   return (
     <div style={{ background: '#f4f1eb', minHeight: '100vh', padding: '32px 16px' }}>
+      {readiness && !readiness.ready && (
+        <div
+          style={{
+            maxWidth: '1200px',
+            margin: '0 auto 24px',
+            background: '#fff3f2',
+            border: '1px solid #e7b3ad',
+            color: '#7f1d1d',
+            padding: '20px 24px',
+            borderRadius: '8px',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          <strong style={{ display: 'block', marginBottom: '8px' }}>Client-facing export blocked</strong>
+          <ul style={{ margin: 0, paddingLeft: '20px' }}>
+            {readiness.issues.map((issue) => (
+              <li key={issue} style={{ marginBottom: '6px' }}>
+                {issue}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <BrandBoard clientName={clientName} brandKit={toBoardKit(kit)} />
     </div>
   )

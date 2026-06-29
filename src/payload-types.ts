@@ -76,6 +76,15 @@ export interface Config {
     'brand-assets': BrandAsset;
     'brand-exports': BrandExport;
     'brand-social-strategies': BrandSocialStrategy;
+    'brand-moodboards': BrandMoodboard;
+    'project-memories': ProjectMemory;
+    'research-sources': ResearchSource;
+    'evidence-items': EvidenceItem;
+    'brand-decisions': BrandDecision;
+    'quality-reviews': QualityReview;
+    'agent-runs': AgentRun;
+    'client-feedback-items': ClientFeedbackItem;
+    'agency-knowledge-bases': AgencyKnowledgeBase;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -92,6 +101,15 @@ export interface Config {
     'brand-assets': BrandAssetsSelect<false> | BrandAssetsSelect<true>;
     'brand-exports': BrandExportsSelect<false> | BrandExportsSelect<true>;
     'brand-social-strategies': BrandSocialStrategiesSelect<false> | BrandSocialStrategiesSelect<true>;
+    'brand-moodboards': BrandMoodboardsSelect<false> | BrandMoodboardsSelect<true>;
+    'project-memories': ProjectMemoriesSelect<false> | ProjectMemoriesSelect<true>;
+    'research-sources': ResearchSourcesSelect<false> | ResearchSourcesSelect<true>;
+    'evidence-items': EvidenceItemsSelect<false> | EvidenceItemsSelect<true>;
+    'brand-decisions': BrandDecisionsSelect<false> | BrandDecisionsSelect<true>;
+    'quality-reviews': QualityReviewsSelect<false> | QualityReviewsSelect<true>;
+    'agent-runs': AgentRunsSelect<false> | AgentRunsSelect<true>;
+    'client-feedback-items': ClientFeedbackItemsSelect<false> | ClientFeedbackItemsSelect<true>;
+    'agency-knowledge-bases': AgencyKnowledgeBasesSelect<false> | AgencyKnowledgeBasesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -186,6 +204,15 @@ export interface Client {
   origin_lead_id?: string | null;
   owner?: string | null;
   status?: ('active' | 'inactive') | null;
+  drive_folder_ids_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -238,9 +265,41 @@ export interface BrandStrategy {
   strategy_id: string;
   client_id: string;
   brief_id?: string | null;
+  company_summary?: string | null;
+  mission?: string | null;
+  vision?: string | null;
+  core_values?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   positioning?: string | null;
+  unique_selling_prop?: string | null;
   audience_profile?: string | null;
+  customer_personas?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   brand_personality?: string | null;
+  emotional_positioning?: string | null;
+  brand_keywords?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   tone_of_voice?: string | null;
   visual_keywords?:
     | {
@@ -254,6 +313,15 @@ export interface BrandStrategy {
   competitor_gap?: string | null;
   social_media_direction?: string | null;
   strategy_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  marketing_strategy_json?:
     | {
         [k: string]: unknown;
       }
@@ -330,15 +398,17 @@ export interface BrandKit {
   createdAt: string;
 }
 /**
+ * Reference files used by the branding agent. For direct Google Drive upload, open /client-references/[client_id] after logging in.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "brand-assets".
  */
 export interface BrandAsset {
   id: number;
-  brand_asset_id: string;
+  brand_asset_id?: string | null;
   client_id: string;
   brand_kit_id?: string | null;
-  asset_type: string;
+  asset_type?: string | null;
   role?:
     | (
         | 'logo_ref'
@@ -364,9 +434,28 @@ export interface BrandAsset {
     | number
     | boolean
     | null;
+  reference_notes?: string | null;
+  reference_tags_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   status?: ('active' | 'inactive') | null;
   updatedAt: string;
   createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -377,6 +466,8 @@ export interface BrandExport {
   export_id: string;
   client_id: string;
   brand_kit_id: string;
+  brief_id?: string | null;
+  strategy_id?: string | null;
   export_type?:
     | (
         | 'brand_board'
@@ -400,6 +491,28 @@ export interface BrandExport {
     | number
     | boolean
     | null;
+  quality_review_id?: string | null;
+  evidence_item_ids?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  brand_decision_ids?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  deliverable_label?: string | null;
+  version_label?: string | null;
+  is_client_facing?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -423,6 +536,321 @@ export interface BrandSocialStrategy {
     | boolean
     | null;
   version?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-moodboards".
+ */
+export interface BrandMoodboard {
+  id: number;
+  moodboard_id: string;
+  client_id: string;
+  brand_kit_id: string;
+  board_type: string;
+  prompt_used?: string | null;
+  reference_asset_ids?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  image_url?: string | null;
+  public_url?: string | null;
+  generation_model?: string | null;
+  metadata_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('draft' | 'approved' | 'superseded') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "project-memories".
+ */
+export interface ProjectMemory {
+  id: number;
+  memory_id: string;
+  client_id: string;
+  memory_key: string;
+  memory_value_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  source_type?: string | null;
+  source_ref?: string | null;
+  confidence?: number | null;
+  status?: string | null;
+  created_by?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-sources".
+ */
+export interface ResearchSource {
+  id: number;
+  source_id: string;
+  client_id: string;
+  title?: string | null;
+  url?: string | null;
+  source_type?: string | null;
+  snippet?: string | null;
+  source_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: string | null;
+  created_by?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "evidence-items".
+ */
+export interface EvidenceItem {
+  id: number;
+  evidence_id: string;
+  client_id: string;
+  brief_id?: string | null;
+  strategy_id?: string | null;
+  source_id?: string | null;
+  evidence_type?: string | null;
+  claim_text: string;
+  evidence_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  confidence?: number | null;
+  status?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-decisions".
+ */
+export interface BrandDecision {
+  id: number;
+  decision_id: string;
+  client_id: string;
+  brief_id?: string | null;
+  strategy_id?: string | null;
+  brand_kit_id?: string | null;
+  decision_type?: string | null;
+  decision_summary: string;
+  rationale?: string | null;
+  supporting_evidence_ids?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quality-reviews".
+ */
+export interface QualityReview {
+  id: number;
+  quality_review_id: string;
+  client_id: string;
+  brief_id?: string | null;
+  strategy_id?: string | null;
+  brand_kit_id?: string | null;
+  export_id?: string | null;
+  review_type?: string | null;
+  review_summary?: string | null;
+  score_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  warnings_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  errors_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  evidence_item_ids?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  brand_decision_ids?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  passed?: boolean | null;
+  reviewed_by?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agent-runs".
+ */
+export interface AgentRun {
+  id: number;
+  agent_run_id: string;
+  client_id?: string | null;
+  brief_id?: string | null;
+  strategy_id?: string | null;
+  brand_kit_id?: string | null;
+  export_id?: string | null;
+  run_type?: string | null;
+  action_name: string;
+  model_name?: string | null;
+  tool_name?: string | null;
+  input_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  output_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: string | null;
+  error_text?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "client-feedback-items".
+ */
+export interface ClientFeedbackItem {
+  id: number;
+  feedback_id: string;
+  client_id: string;
+  brand_kit_id?: string | null;
+  strategy_id?: string | null;
+  export_id?: string | null;
+  source_type?: string | null;
+  feedback_text: string;
+  feedback_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: string | null;
+  created_by?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Agency Brain records used for just-in-time prompting. n8n loads these by task instead of relying on hardcoded prompt text.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agency-knowledge-bases".
+ */
+export interface AgencyKnowledgeBase {
+  id: number;
+  knowledge_id: string;
+  title: string;
+  slug: string;
+  knowledge_type: 'skill' | 'framework' | 'rubric' | 'sop' | 'template' | 'example';
+  task_key:
+    | 'global'
+    | 'brand_strategy'
+    | 'brand_kit'
+    | 'social_strategy'
+    | 'marketing_strategy'
+    | 'client_brief'
+    | 'deliverables_export'
+    | 'quality_review';
+  role_in_prompt: 'system' | 'framework' | 'rubric' | 'sop' | 'template' | 'supporting';
+  content_markdown: string;
+  summary?: string | null;
+  token_weight: 'core' | 'supporting' | 'example' | 'archive';
+  status: 'active' | 'draft' | 'archived';
+  version: number;
+  source_path?: string | null;
+  source_hash?: string | null;
+  tags_json?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -485,6 +913,42 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'brand-social-strategies';
         value: number | BrandSocialStrategy;
+      } | null)
+    | ({
+        relationTo: 'brand-moodboards';
+        value: number | BrandMoodboard;
+      } | null)
+    | ({
+        relationTo: 'project-memories';
+        value: number | ProjectMemory;
+      } | null)
+    | ({
+        relationTo: 'research-sources';
+        value: number | ResearchSource;
+      } | null)
+    | ({
+        relationTo: 'evidence-items';
+        value: number | EvidenceItem;
+      } | null)
+    | ({
+        relationTo: 'brand-decisions';
+        value: number | BrandDecision;
+      } | null)
+    | ({
+        relationTo: 'quality-reviews';
+        value: number | QualityReview;
+      } | null)
+    | ({
+        relationTo: 'agent-runs';
+        value: number | AgentRun;
+      } | null)
+    | ({
+        relationTo: 'client-feedback-items';
+        value: number | ClientFeedbackItem;
+      } | null)
+    | ({
+        relationTo: 'agency-knowledge-bases';
+        value: number | AgencyKnowledgeBase;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -578,6 +1042,7 @@ export interface ClientsSelect<T extends boolean = true> {
   origin_lead_id?: T;
   owner?: T;
   status?: T;
+  drive_folder_ids_json?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -604,14 +1069,23 @@ export interface BrandStrategiesSelect<T extends boolean = true> {
   strategy_id?: T;
   client_id?: T;
   brief_id?: T;
+  company_summary?: T;
+  mission?: T;
+  vision?: T;
+  core_values?: T;
   positioning?: T;
+  unique_selling_prop?: T;
   audience_profile?: T;
+  customer_personas?: T;
   brand_personality?: T;
+  emotional_positioning?: T;
+  brand_keywords?: T;
   tone_of_voice?: T;
   visual_keywords?: T;
   competitor_gap?: T;
   social_media_direction?: T;
   strategy_json?: T;
+  marketing_strategy_json?: T;
   version?: T;
   parent_strategy_id?: T;
   revision_note?: T;
@@ -660,9 +1134,20 @@ export interface BrandAssetsSelect<T extends boolean = true> {
   public_url?: T;
   frameio_asset_id?: T;
   metadata_json?: T;
+  reference_notes?: T;
+  reference_tags_json?: T;
   status?: T;
   updatedAt?: T;
   createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -672,9 +1157,17 @@ export interface BrandExportsSelect<T extends boolean = true> {
   export_id?: T;
   client_id?: T;
   brand_kit_id?: T;
+  brief_id?: T;
+  strategy_id?: T;
   export_type?: T;
   export_url?: T;
   export_json?: T;
+  quality_review_id?: T;
+  evidence_item_ids?: T;
+  brand_decision_ids?: T;
+  deliverable_label?: T;
+  version_label?: T;
+  is_client_facing?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -689,6 +1182,182 @@ export interface BrandSocialStrategiesSelect<T extends boolean = true> {
   platform?: T;
   strategy_json?: T;
   version?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-moodboards_select".
+ */
+export interface BrandMoodboardsSelect<T extends boolean = true> {
+  moodboard_id?: T;
+  client_id?: T;
+  brand_kit_id?: T;
+  board_type?: T;
+  prompt_used?: T;
+  reference_asset_ids?: T;
+  image_url?: T;
+  public_url?: T;
+  generation_model?: T;
+  metadata_json?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "project-memories_select".
+ */
+export interface ProjectMemoriesSelect<T extends boolean = true> {
+  memory_id?: T;
+  client_id?: T;
+  memory_key?: T;
+  memory_value_json?: T;
+  source_type?: T;
+  source_ref?: T;
+  confidence?: T;
+  status?: T;
+  created_by?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "research-sources_select".
+ */
+export interface ResearchSourcesSelect<T extends boolean = true> {
+  source_id?: T;
+  client_id?: T;
+  title?: T;
+  url?: T;
+  source_type?: T;
+  snippet?: T;
+  source_json?: T;
+  status?: T;
+  created_by?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "evidence-items_select".
+ */
+export interface EvidenceItemsSelect<T extends boolean = true> {
+  evidence_id?: T;
+  client_id?: T;
+  brief_id?: T;
+  strategy_id?: T;
+  source_id?: T;
+  evidence_type?: T;
+  claim_text?: T;
+  evidence_json?: T;
+  confidence?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand-decisions_select".
+ */
+export interface BrandDecisionsSelect<T extends boolean = true> {
+  decision_id?: T;
+  client_id?: T;
+  brief_id?: T;
+  strategy_id?: T;
+  brand_kit_id?: T;
+  decision_type?: T;
+  decision_summary?: T;
+  rationale?: T;
+  supporting_evidence_ids?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quality-reviews_select".
+ */
+export interface QualityReviewsSelect<T extends boolean = true> {
+  quality_review_id?: T;
+  client_id?: T;
+  brief_id?: T;
+  strategy_id?: T;
+  brand_kit_id?: T;
+  export_id?: T;
+  review_type?: T;
+  review_summary?: T;
+  score_json?: T;
+  warnings_json?: T;
+  errors_json?: T;
+  evidence_item_ids?: T;
+  brand_decision_ids?: T;
+  passed?: T;
+  reviewed_by?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agent-runs_select".
+ */
+export interface AgentRunsSelect<T extends boolean = true> {
+  agent_run_id?: T;
+  client_id?: T;
+  brief_id?: T;
+  strategy_id?: T;
+  brand_kit_id?: T;
+  export_id?: T;
+  run_type?: T;
+  action_name?: T;
+  model_name?: T;
+  tool_name?: T;
+  input_json?: T;
+  output_json?: T;
+  status?: T;
+  error_text?: T;
+  started_at?: T;
+  completed_at?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "client-feedback-items_select".
+ */
+export interface ClientFeedbackItemsSelect<T extends boolean = true> {
+  feedback_id?: T;
+  client_id?: T;
+  brand_kit_id?: T;
+  strategy_id?: T;
+  export_id?: T;
+  source_type?: T;
+  feedback_text?: T;
+  feedback_json?: T;
+  status?: T;
+  created_by?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "agency-knowledge-bases_select".
+ */
+export interface AgencyKnowledgeBasesSelect<T extends boolean = true> {
+  knowledge_id?: T;
+  title?: T;
+  slug?: T;
+  knowledge_type?: T;
+  task_key?: T;
+  role_in_prompt?: T;
+  content_markdown?: T;
+  summary?: T;
+  token_weight?: T;
+  status?: T;
+  version?: T;
+  source_path?: T;
+  source_hash?: T;
+  tags_json?: T;
   updatedAt?: T;
   createdAt?: T;
 }

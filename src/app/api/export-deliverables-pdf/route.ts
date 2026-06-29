@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
 
+import { evaluateBrandExportReadiness } from '@/lib/brand/export-readiness'
+
 export const dynamic = 'force-dynamic'
 
 const generatePdf = async (request: Request, body: Record<string, unknown>) => {
@@ -10,6 +12,18 @@ const generatePdf = async (request: Request, body: Record<string, unknown>) => {
 
   if (!brandKitId) {
     return NextResponse.json({ error: 'brand_kit_id is required' }, { status: 400 })
+  }
+
+  const readiness = await evaluateBrandExportReadiness(brandKitId, { requireMarketingStrategy: true })
+
+  if (!readiness?.ready) {
+    return NextResponse.json(
+      {
+        error: 'Marketing deliverables export blocked by readiness gate',
+        issues: readiness?.issues || ['Export readiness could not be verified'],
+      },
+      { status: 409 },
+    )
   }
 
   const origin = (
@@ -54,9 +68,10 @@ const generatePdf = async (request: Request, body: Record<string, unknown>) => {
         'Content-Disposition': `attachment; filename="Marketing_Deliverables_${brandKitId}.pdf"`,
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const details = error instanceof Error ? error.message : 'Unknown error'
     console.error('PDF Generation Error:', error)
-    return NextResponse.json({ error: 'Failed to generate PDF', details: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to generate PDF', details }, { status: 500 })
   } finally {
     if (browser) {
       await browser.close()

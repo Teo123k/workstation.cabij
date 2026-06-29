@@ -10,6 +10,8 @@ export const BrandExports: CollectionConfig = {
     { name: 'export_id', type: 'text', required: true, unique: true },
     { name: 'client_id', type: 'text', required: true },
     { name: 'brand_kit_id', type: 'text', required: true },
+    { name: 'brief_id', type: 'text' },
+    { name: 'strategy_id', type: 'text' },
     { name: 'export_type', type: 'select', options: [
       'brand_board', 'brand_guidelines_pdf', 'social_template_instagram_post',
       'social_template_instagram_story', 'ad_template_meta', 'business_card_mockup',
@@ -17,6 +19,12 @@ export const BrandExports: CollectionConfig = {
     ]},
     { name: 'export_url', type: 'text' },
     { name: 'export_json', type: 'json' },
+    { name: 'quality_review_id', type: 'text' },
+    { name: 'evidence_item_ids', type: 'json' },
+    { name: 'brand_decision_ids', type: 'json' },
+    { name: 'deliverable_label', type: 'text' },
+    { name: 'version_label', type: 'text' },
+    { name: 'is_client_facing', type: 'checkbox', defaultValue: true },
   ],
   timestamps: true,
 };

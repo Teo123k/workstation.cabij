@@ -2,6 +2,8 @@ import chromium from '@sparticuz/chromium'
 import { NextResponse } from 'next/server'
 import puppeteer from 'puppeteer-core'
 
+import { evaluateBrandExportReadiness } from '@/lib/brand/export-readiness'
+
 export const dynamic = 'force-dynamic'
 
 const getOrigin = (request: Request) =>
@@ -25,6 +27,18 @@ const exportBrandBoard = async (request: Request, body: Record<string, unknown>)
 
   if (!['pdf', 'png'].includes(format)) {
     return NextResponse.json({ error: 'format must be pdf or png' }, { status: 400 })
+  }
+
+  const readiness = await evaluateBrandExportReadiness(brandKitId)
+
+  if (!readiness?.ready) {
+    return NextResponse.json(
+      {
+        error: 'Brand board export blocked by readiness gate',
+        issues: readiness?.issues || ['Export readiness could not be verified'],
+      },
+      { status: 409 },
+    )
   }
 
   let browser

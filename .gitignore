@@ -30,6 +30,9 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.prod.raw
+.env.vercel
+.env.vercel.prod
 
 # vercel
 .vercel
@@ -41,6 +44,14 @@ next-env.d.ts
 .env
 
 /media
+
+# local database and migration scratch files
+migrate*.log
+migration.sql
+check-tables.ts
+run-migration.ts
+run-sql.ts
+test-delete*.ts
 
 # Playwright
 node_modules/

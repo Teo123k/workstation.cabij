@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import React from 'react'
 
+import { evaluateBrandExportReadiness } from '@/lib/brand/export-readiness'
 import { loadMarketingDeliverables } from '@/lib/brand/load-marketing'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +17,10 @@ const asRecord = (value: unknown): Record<string, unknown> =>
 
 export default async function DeliverablesPage({ params }: PageProps) {
   const { brandKitId } = await params
-  const kit = await loadMarketingDeliverables(brandKitId)
+  const [kit, readiness] = await Promise.all([
+    loadMarketingDeliverables(brandKitId),
+    evaluateBrandExportReadiness(brandKitId, { requireMarketingStrategy: true }),
+  ])
 
   if (!kit || !kit.marketing_strategy_json) {
     notFound()
@@ -33,6 +37,27 @@ export default async function DeliverablesPage({ params }: PageProps) {
 
   return (
     <div style={{ background: '#ffffff', minHeight: '100vh', padding: '64px', fontFamily: 'Inter, sans-serif', color: '#111' }}>
+      {readiness && !readiness.ready && (
+        <section
+          style={{
+            marginBottom: '32px',
+            background: '#fff3f2',
+            border: '1px solid #e7b3ad',
+            color: '#7f1d1d',
+            padding: '20px 24px',
+            borderRadius: '8px',
+          }}
+        >
+          <strong style={{ display: 'block', marginBottom: '8px' }}>Deliverables export blocked</strong>
+          <ul style={{ margin: 0, paddingLeft: '20px' }}>
+            {readiness.issues.map((issue) => (
+              <li key={issue} style={{ marginBottom: '6px' }}>
+                {issue}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <header style={{ borderBottom: '2px solid #000', paddingBottom: '24px', marginBottom: '48px' }}>
         <h1 style={{ fontSize: '48px', fontWeight: 'bold', margin: 0 }}>Marketing Deliverables</h1>
         <h2 style={{ fontSize: '24px', fontWeight: 'normal', color: '#555', marginTop: '12px' }}>{clientName} // {kit.direction_name}</h2>

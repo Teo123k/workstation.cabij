@@ -14,6 +14,15 @@ import { BrandKits } from './collections/BrandKits'
 import { BrandAssets } from './collections/BrandAssets'
 import { BrandExports } from './collections/BrandExports'
 import { BrandSocialStrategies } from './collections/BrandSocialStrategies'
+import { BrandMoodboards } from './collections/BrandMoodboards'
+import { ProjectMemories } from './collections/ProjectMemories'
+import { ResearchSources } from './collections/ResearchSources'
+import { EvidenceItems } from './collections/EvidenceItems'
+import { BrandDecisions } from './collections/BrandDecisions'
+import { QualityReviews } from './collections/QualityReviews'
+import { AgentRuns } from './collections/AgentRuns'
+import { ClientFeedbackItems } from './collections/ClientFeedbackItems'
+import { AgencyKnowledgeBases } from './collections/AgencyKnowledgeBases'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -23,6 +32,13 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    components: {
+      views: {
+        Dashboard: {
+          Component: '@/components/AgencyDashboard#AgencyDashboard',
+        },
+      },
     },
   },
   collections: [
@@ -34,7 +50,16 @@ export default buildConfig({
     BrandKits,
     BrandAssets,
     BrandExports,
-    BrandSocialStrategies
+    BrandSocialStrategies,
+    BrandMoodboards,
+    ProjectMemories,
+    ResearchSources,
+    EvidenceItems,
+    BrandDecisions,
+    QualityReviews,
+    AgentRuns,
+    ClientFeedbackItems,
+    AgencyKnowledgeBases,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
