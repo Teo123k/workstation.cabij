@@ -9,6 +9,9 @@ import config from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
+const DEFAULT_N8N_UPLOAD_WEBHOOK_URL =
+  'https://n8n-vwzv.srv1756298.hstgr.cloud/webhook/payloadRefUpload01/webhook/payload-reference-upload'
+
 async function requirePayloadUser() {
   const headers = await getHeaders()
   const payloadConfig = await config
@@ -18,23 +21,56 @@ async function requirePayloadUser() {
   return { payload, user }
 }
 
+async function uploadViaN8nBridge(params: {
+  file: File
+  clientId: string
+  role: string
+  referenceNotes: string
+  uploadedBy: string
+  folderId?: string
+}) {
+  const requestUrl = new URL(process.env.N8N_PAYLOAD_UPLOAD_WEBHOOK_URL || DEFAULT_N8N_UPLOAD_WEBHOOK_URL)
+
+  requestUrl.searchParams.set('client_id', params.clientId)
+  requestUrl.searchParams.set('role', params.role)
+  requestUrl.searchParams.set('filename', params.file.name || `${params.role}-${Date.now()}`)
+  requestUrl.searchParams.set('reference_notes', params.referenceNotes)
+  requestUrl.searchParams.set('uploaded_by', params.uploadedBy)
+
+  if (params.folderId) {
+    requestUrl.searchParams.set('folder_id', params.folderId)
+  }
+
+  const bridgeFormData = new FormData()
+  bridgeFormData.set('data', params.file, params.file.name || `${params.role}-${Date.now()}`)
+
+  const response = await fetch(requestUrl, {
+    method: 'POST',
+    body: bridgeFormData,
+  })
+
+  const json = (await response.json().catch(() => ({}))) as {
+    brand_asset_id?: string
+    client_id?: string
+    role?: string
+    file_url?: string
+    public_url?: string
+    error?: string
+    message?: string
+  }
+
+  if (!response.ok || !json.brand_asset_id) {
+    throw new Error(json.error || json.message || response.statusText || 'n8n upload bridge failed')
+  }
+
+  return json
+}
+
 export async function POST(request: Request) {
   const { payload, user } = await requirePayloadUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Payload admin login required' }, { status: 401 })
-  }
-
-  const missingEnv = getMissingGoogleDriveEnv()
-
-  if (missingEnv.length) {
-    return NextResponse.json(
-      {
-        error: 'Google Drive upload is not configured',
-        missing_env: missingEnv,
-      },
-      { status: 500 },
-    )
   }
 
   const formData = await request.formData()
@@ -73,8 +109,23 @@ export async function POST(request: Request) {
     return driveIds.root
   })()
 
+  const missingEnv = getMissingGoogleDriveEnv()
   for (const file of files) {
     try {
+      if (missingEnv.length) {
+        const uploadedAsset = await uploadViaN8nBridge({
+          file,
+          clientId,
+          role,
+          referenceNotes,
+          uploadedBy: user.email || 'payload_admin',
+          folderId: targetFolderId,
+        })
+
+        uploaded.push(uploadedAsset)
+        continue
+      }
+
       const driveResult = await uploadFileToGoogleDrive({
         file,
         clientId,
@@ -102,9 +153,10 @@ export async function POST(request: Request) {
     } catch (error) {
       return NextResponse.json(
         {
-          error: 'Google Drive upload failed',
+          error: missingEnv.length ? 'n8n upload bridge failed' : 'Google Drive upload failed',
           details: error instanceof Error ? error.message : 'Unknown upload error',
           file: file.name,
+          ...(missingEnv.length ? { missing_env: missingEnv } : {}),
         },
         { status: 502 },
       )
