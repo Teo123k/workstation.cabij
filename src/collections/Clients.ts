@@ -131,46 +131,7 @@ export const Clients: CollectionConfig = {
     ],
     afterDelete: [
       async ({ doc, req }) => {
-        const { payload } = req;
-        const clientId = doc.client_id;
-        
-        // 1. Cascade delete Postgres related records
-        const relatedCollections = [
-          'brand-briefs',
-          'brand-strategies',
-          'brand-kits',
-          'brand-assets',
-          'brand-exports',
-          'brand-social-strategies',
-          'brand-moodboards',
-          'project-memories',
-          'research-sources',
-          'evidence-items',
-          'brand-decisions',
-          'quality-reviews',
-          'agent-runs',
-          'client-feedback-items',
-        ];
-
-        for (const collection of relatedCollections) {
-          try {
-            // Delete all documents in this collection with the matching client_id
-            await payload.delete({
-              collection: collection as any,
-              where: {
-                client_id: {
-                  equals: clientId,
-                },
-              },
-              req,
-            });
-          } catch (e) {
-            req.payload.logger.error(`Error deleting related ${collection} for client ${clientId}: ${e}`);
-          }
-        }
-
-        // 2. Trigger n8n Teardown Webhook asynchronously with a strict timeout
-        // We do not want to hold the Postgres transaction open while n8n deletes Drive folders
+        // Trigger n8n teardown after the database cleanup has already happened in beforeDelete.
         try {
           const webhookUrl = 'https://n8n-vwzv.srv1756298.hstgr.cloud/webhook/teardown-client';
           const controller = new AbortController();
