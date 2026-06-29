@@ -29,12 +29,13 @@ export function ClientReferenceUploadForm({ clientId }: { clientId: string }) {
     const json = (await response.json().catch(() => ({}))) as {
       uploaded?: Array<{ brand_asset_id?: string }>
       error?: string
+      details?: string
       missing_env?: string[]
     }
 
     if (!response.ok) {
-      const suffix = json.missing_env?.length ? ` Missing: ${json.missing_env.join(', ')}` : ''
-      setState({ status: 'error', message: `${json.error || 'Upload failed.'}${suffix}` })
+      const detail = json.details ? ` ${json.details}` : ''
+      setState({ status: 'error', message: `${json.error || 'Upload failed.'}${detail}` })
       return
     }
 

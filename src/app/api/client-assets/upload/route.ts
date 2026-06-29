@@ -10,7 +10,7 @@ import config from '@/payload.config'
 export const dynamic = 'force-dynamic'
 
 const DEFAULT_N8N_UPLOAD_WEBHOOK_URL =
-  'https://n8n-vwzv.srv1756298.hstgr.cloud/webhook/payloadRefUpload01/webhook/payload-reference-upload'
+  'https://n8n.cabij.co/webhook/payload-reference-upload'
 
 async function requirePayloadUser() {
   const headers = await getHeaders()
@@ -156,7 +156,6 @@ export async function POST(request: Request) {
           error: missingEnv.length ? 'n8n upload bridge failed' : 'Google Drive upload failed',
           details: error instanceof Error ? error.message : 'Unknown upload error',
           file: file.name,
-          ...(missingEnv.length ? { missing_env: missingEnv } : {}),
         },
         { status: 502 },
       )
