@@ -392,6 +392,8 @@ async function sendTelegramMessage(chatId: string, text: string, replyMarkup?: u
 
   const json = await response.json().catch(() => ({}))
   if (!response.ok || json?.ok === false) {
+    const tokenPrefix = TELEGRAM_TOKEN.substring(0, 5) + '...'
+    console.error(`Telegram sendMessage failed for chatId=${chatId} using token=${tokenPrefix}. API responded with:`, json)
     throw new Error(`Telegram sendMessage failed: ${json?.description || response.statusText}`)
   }
 }
