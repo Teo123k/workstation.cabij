@@ -23,6 +23,10 @@ import { QualityReviews } from './collections/QualityReviews'
 import { AgentRuns } from './collections/AgentRuns'
 import { ClientFeedbackItems } from './collections/ClientFeedbackItems'
 import { AgencyKnowledgeBases } from './collections/AgencyKnowledgeBases'
+import { BrandSessions } from './collections/BrandSessions'
+import { telegramWebhookEndpoint } from './endpoints/telegram'
+
+
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -60,6 +64,7 @@ export default buildConfig({
     AgentRuns,
     ClientFeedbackItems,
     AgencyKnowledgeBases,
+    BrandSessions,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -74,4 +79,7 @@ export default buildConfig({
   }),
   sharp,
   plugins: [],
+  endpoints: [
+    telegramWebhookEndpoint,
+  ],
 })
