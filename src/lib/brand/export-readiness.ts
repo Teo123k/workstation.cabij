@@ -1,4 +1,4 @@
-import { Pool } from 'pg'
+import { finalExportDecision } from '@/lib/ai/modelRouter'
 
 type ExportReadinessRow = {
   brand_kit_id: string
@@ -18,6 +18,7 @@ type ExportReadinessRow = {
   evidence_count: number
   reference_asset_count: number
   approved_strategy_review_count: number
+  latest_quality_score_json: Record<string, unknown> | null
 }
 
 export type ExportReadinessResult = {
@@ -33,23 +34,16 @@ export type ExportReadinessResult = {
     evidenceThresholdMet: boolean
     referenceThresholdMet: boolean
     passedQualityReview: boolean
+    finalQualityScoreMet: boolean
     marketingStrategyReady: boolean
   }
-}
-
-const globalForBrandExportGate = globalThis as typeof globalThis & {
-  exportReadinessPool?: Pool
-}
-
-const getPool = () => {
-  if (!globalForBrandExportGate.exportReadinessPool) {
-    globalForBrandExportGate.exportReadinessPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    })
+  finalQuality: {
+    averageScore: number | null
+    status: 'draft' | 'final'
   }
-
-  return globalForBrandExportGate.exportReadinessPool
 }
+
+import { getResearchPool as getPool } from '@/lib/research/db'
 
 const hasText = (value: unknown) => typeof value === 'string' && value.trim().length > 0
 
@@ -175,7 +169,15 @@ export async function evaluateBrandExportReadiness(
           WHERE qr.client_id = kit.client_id
             AND (qr.strategy_id = kit.strategy_id OR qr.brand_kit_id = kit.brand_kit_id)
             AND COALESCE(qr.passed, false) = true
-        ) as approved_strategy_review_count
+        ) as approved_strategy_review_count,
+        (
+          SELECT qr.score_json
+          FROM quality_review qr
+          WHERE qr.client_id = kit.client_id
+            AND (qr.strategy_id = kit.strategy_id OR qr.brand_kit_id = kit.brand_kit_id)
+          ORDER BY qr.created_at DESC NULLS LAST
+          LIMIT 1
+        ) as latest_quality_score_json
       FROM chosen_kit kit
       LEFT JOIN chosen_strategy strategy ON strategy.strategy_id = kit.strategy_id
       LEFT JOIN ranked_client rc ON rc.client_id = kit.client_id AND rc.row_rank = 1
@@ -190,6 +192,19 @@ export async function evaluateBrandExportReadiness(
     return null
   }
 
+  const scoreJson = (row.latest_quality_score_json || {}) as Record<string, unknown>
+  const creativeDecision = finalExportDecision({
+    brand_accuracy: scoreJson.brand_accuracy,
+    audience_fit: scoreJson.audience_fit,
+    premium_perception: scoreJson.premium_perception,
+    visual_consistency: scoreJson.visual_consistency,
+    originality: scoreJson.originality,
+    commercial_usefulness: scoreJson.commercial_usefulness ?? scoreJson.combined_score,
+    social_media_usability: scoreJson.social_media_usability,
+    photo_realism: scoreJson.photo_realism,
+    risk_of_ai_look: scoreJson.risk_of_ai_look,
+  })
+
   const checks = {
     approvedKit: row.kit_status === 'approved',
     strategyFieldsComplete:
@@ -203,6 +218,7 @@ export async function evaluateBrandExportReadiness(
     evidenceThresholdMet: Number(row.evidence_count || 0) >= 2,
     referenceThresholdMet: Number(row.reference_asset_count || 0) >= 2,
     passedQualityReview: Number(row.approved_strategy_review_count || 0) >= 1,
+    finalQualityScoreMet: creativeDecision.passed,
     marketingStrategyReady: !requireMarketingStrategy || hasObjectContent(row.marketing_strategy_json),
   }
 
@@ -228,6 +244,10 @@ export async function evaluateBrandExportReadiness(
     issues.push('A passed quality review linked to the strategy or kit is required before export.')
   }
 
+  if (!checks.finalQualityScoreMet) {
+    issues.push('Final quality score must average at least 8/10 before export. Below-threshold work stays draft and should be revised once.')
+  }
+
   if (!checks.marketingStrategyReady) {
     issues.push('Marketing strategy content is missing, so the deliverables package is not ready.')
   }
@@ -240,5 +260,9 @@ export async function evaluateBrandExportReadiness(
     directionName: row.direction_name,
     issues,
     checks,
+    finalQuality: {
+      averageScore: creativeDecision.averageScore,
+      status: creativeDecision.status,
+    },
   }
 }
